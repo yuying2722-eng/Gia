@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="面向编织初学者的线材换算、替线匹配与合股模拟工具。">
+  <title>线材对一对｜编织线材换算工具</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231b4332'/%3E%3Cpath d='M15 35c7-13 27-13 34 0-7 13-27 13-34 0Z' fill='none' stroke='%23f2c14e' stroke-width='5'/%3E%3Cpath d='M19 27c7 12 19 18 29 9M16 38c10-8 24-12 33-5' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root{--ink:#17251f;--muted:#63716a;--paper:#f6f8f5;--card:#fff;--line:#dce4df;--green:#1b4332;--green-2:#2d6a4f;--mint:#d8eee2;--gold:#f2c14e;--warn:#9a5b12;--danger:#a63d40;--shadow:0 18px 50px rgba(23,37,31,.09);--r:22px}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:linear-gradient(180deg,#eef5f0 0,#f8f9f7 34rem);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .shell{width:min(1160px,calc(100% - 32px));margin:auto;padding:26px 0 70px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .mark{width:42px;height:42px;border-radius:13px;background:var(--green);display:grid;place-items:center;color:#fff;font-weight:800;box-shadow:0 8px 20px rgba(27,67,50,.18)}
+    h1{font-size:clamp(1.35rem,3vw,2rem);line-height:1.15;margin:0;letter-spacing:-.03em}
+    .brand p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+    .tag{font-size:.82rem;color:var(--green);border:1px solid #bad3c5;background:#fff;padding:7px 11px;border-radius:999px;white-space:nowrap}
+    .hero{background:var(--green);color:#fff;border-radius:28px;padding:clamp(22px,4vw,42px);position:relative;overflow:hidden;box-shadow:var(--shadow)}
+    .hero:after{content:"";position:absolute;width:260px;height:260px;border:42px solid rgba(242,193,78,.16);border-radius:50%;right:-90px;top:-120px}
+    .eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#bfe0ce;font-weight:750}
+    .hero h2{font-size:clamp(1.8rem,5vw,3.4rem);line-height:1.08;letter-spacing:-.05em;max-width:720px;margin:10px 0 12px}
+    .hero>p{max-width:710px;color:#dcebe3;margin:0;font-size:1.03rem}
+    .matcher{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;position:relative;z-index:1}
+    .input-card{background:#fff;color:var(--ink);border-radius:20px;padding:20px}
+    .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .step{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:var(--mint);color:var(--green);font-weight:800}
+    .input-card h3{font-size:1.05rem;margin:0}
+    label{display:block;font-size:.86rem;color:#536159;font-weight:650;margin-bottom:7px}
+    select,input{width:100%;border:1px solid #cbd7d0;border-radius:12px;background:#fff;color:var(--ink);min-height:46px;padding:10px 12px;outline:none;transition:.18s}
+    select:focus,input:focus{border-color:var(--green-2);box-shadow:0 0 0 3px rgba(45,106,79,.13)}
+    .fields{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;margin-top:12px}
+    .fields.has-weight-unit{grid-template-columns:minmax(0,1fr) minmax(0,.72fr) minmax(90px,.8fr)}
+    .notation-mode{display:none;margin-top:12px}
+    .input-hint{font-size:.78rem;color:var(--muted);margin:8px 0 0;min-height:1.2em}
+    .calculate-bar{display:flex;justify-content:center;margin-top:16px;position:relative;z-index:1}
+    .calculate-btn{min-width:min(100%,320px);border:0;border-radius:14px;background:var(--gold);color:#26362f;padding:13px 24px;font-weight:850;box-shadow:0 9px 22px rgba(242,193,78,.25);transition:transform .18s,box-shadow .18s}
+    .calculate-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(242,193,78,.32)}
+    .calculate-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+    .match-result{margin-top:16px;background:#fff;color:var(--ink);border-radius:20px;padding:22px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;position:relative;z-index:1}
+    .result-icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:#edf2ef;color:var(--muted);font-size:1.35rem;font-weight:900}
+    .match-result h3{margin:0;font-size:1.15rem}
+    .match-result p{margin:4px 0 0;color:var(--muted)}
+    .comparison-chart{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:center;margin-top:14px;padding:13px;border:1px solid var(--line);border-radius:15px;background:#fbfcfb}
+    .pie{width:96px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(23,37,31,.08)}
+    .pie-center{width:58px;aspect-ratio:1;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center;box-shadow:0 2px 10px rgba(23,37,31,.12);font-size:.7rem;color:var(--muted);line-height:1.2}
+    .pie-center strong{display:block;color:var(--ink);font-size:.95rem}
+    .chart-legend{display:grid;gap:9px}
+    .legend-row{display:grid;grid-template-columns:10px 1fr;gap:8px;align-items:start;font-size:.82rem;color:var(--muted)}
+    .legend-row i{width:10px;height:10px;border-radius:50%;margin-top:4px}
+    .legend-row strong{display:block;color:var(--ink);font-size:.88rem}
+    .strand-advice{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f1f6f3;color:var(--green);font-size:.9rem;font-weight:700;line-height:1.45}
+    .match-result.close .strand-advice{background:#fff7df;color:#77520b}
+    .match-result.bad .strand-advice{background:#fff0f0;color:#7f3033}
+    .gap-warning{margin-top:9px;padding:10px 12px;border-radius:11px;background:#a63d40;color:#fff;font-size:.88rem;font-weight:800;line-height:1.4}
+    .usage-converter{margin-top:11px;padding:14px;border-radius:14px;background:#f6f8f6;border:1px solid var(--line)}
+    .usage-converter h4{margin:0 0 3px;font-size:.98rem}
+    .usage-converter>p{font-size:.78rem;margin:0 0 11px;color:var(--muted)}
+    .usage-inputs{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .usage-quantity{display:grid;grid-template-columns:minmax(0,1fr) minmax(92px,.75fr);gap:6px}
+    .usage-inputs label{font-size:.78rem;margin-bottom:4px}
+    .usage-inputs input,.usage-inputs select{min-height:40px;padding:8px 10px;border-radius:10px}
+    .usage-results{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:10px}
+    .usage-results div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;min-width:0}
+    .usage-results span{display:block;color:var(--muted);font-size:.7rem}
+    .usage-results strong{display:block;color:var(--ink);font-size:.92rem;overflow-wrap:anywhere}
+    .purchase-tip{margin-top:8px;color:var(--green);font-size:.82rem;font-weight:800}
+    .delta{text-align:right;font-size:.85rem;color:var(--muted)}
+    .delta strong{display:block;font-size:1.35rem;color:var(--ink)}
+    .match-result.good .result-icon{background:#dff2e6;color:#187342}
+    .match-result.close .result-icon{background:#fff0c8;color:#8a5a00}
+    .match-result.bad .result-icon{background:#f9dddd;color:var(--danger)}
+    main{display:grid;gap:20px;margin-top:20px}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 12px 34px rgba(23,37,31,.055);padding:clamp(20px,3vw,30px)}
+    .panel-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+    .panel h2{font-size:1.3rem;margin:0}
+    .panel-head p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+    .examples{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{border:1px solid #bdd0c5;background:#f5faf7;color:var(--green);border-radius:999px;padding:7px 12px;font-size:.84rem;font-weight:700}
+    .chip:hover{background:var(--mint)}
+    .converter-layout{display:grid;grid-template-columns:minmax(260px,.78fr) 1.22fr;gap:22px;align-items:start}
+    .form-stack{display:grid;gap:13px}
+    .soft{background:#f3f7f4;border:1px solid #dce7e0;border-radius:16px;padding:16px}
+    .soft p{margin:0;color:var(--muted);font-size:.86rem}
+    .weight-quick h3{font-size:1rem;margin:0 0 4px}
+    .weight-quick .quick-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}
+    .weight-quick .quick-answer{font-size:1.2rem;font-weight:850;color:var(--green)}
+    .weight-quick .quick-details{margin-top:3px;font-size:.8rem;color:var(--muted)}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .metric{border:1px solid var(--line);border-radius:15px;padding:14px;background:#fff;min-width:0}
+    .metric span{display:block;color:var(--muted);font-size:.78rem;margin-bottom:4px}
+    .metric strong{font-size:clamp(1rem,2.2vw,1.3rem);letter-spacing:-.02em;overflow-wrap:anywhere}
+    .direction{grid-column:1/-1;background:var(--green);color:#fff;border-radius:15px;padding:14px 16px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+    .direction small{color:#cde2d6}
+    .grade{font-weight:800;color:var(--gold);white-space:nowrap}
+    .ply-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+    .segmented{display:flex;flex-wrap:wrap;background:#edf2ef;padding:4px;border-radius:13px;gap:4px}
+    .segmented button{border:0;border-radius:10px;background:transparent;color:var(--muted);padding:9px 12px;flex:1 1 120px;font-weight:700}
+    .segmented button.active{background:#fff;color:var(--green);box-shadow:0 2px 8px rgba(23,37,31,.1)}
+    .mixed-fields[hidden],.same-fields[hidden]{display:none}
+    .mixed-fields{display:grid;gap:10px}
+    .mixed-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:end;border:1px solid var(--line);border-radius:13px;padding:10px;background:#fff}
+    .mixed-row label{grid-column:1/-1;margin:0}
+    .mixed-row button{min-height:46px;border:1px solid var(--line);background:#fff;color:var(--danger);border-radius:12px;padding:8px 11px;font-weight:700}
+    .mixed-row button:disabled{opacity:.35;cursor:not-allowed}
+    .mixed-row .mixed-parsed,.mixed-row .mixed-slash-mode{grid-column:1/-1}
+    .mixed-row .mixed-parsed{font-size:.8rem;color:var(--green)}
+    .mixed-row .mixed-parsed.invalid{color:var(--danger)}
+    .mixed-row .mixed-slash-mode[hidden]{display:none}
+    .mixed-note{font-size:.82rem;color:var(--muted);margin:0}
+    .ply-result{background:#f4f7f5;border-radius:18px;padding:20px;display:flex;flex-direction:column;justify-content:center}
+    .ply-result .big{font-size:clamp(2rem,6vw,3.6rem);line-height:1;font-weight:850;letter-spacing:-.06em;color:var(--green);margin:8px 0}
+    .ply-result p{margin:0;color:var(--muted)}
+    .warning{border-left:4px solid var(--gold);background:#fffbef;padding:14px 16px;border-radius:0 12px 12px 0;color:#665429;font-size:.9rem;margin-top:16px}
+    .guide{display:grid;grid-template-columns:1.1fr .9fr;gap:22px}
+    .scale{display:grid;grid-template-columns:repeat(6,1fr);border-radius:14px;overflow:hidden;margin-top:15px}
+    .scale div{min-height:74px;padding:10px 7px;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;font-size:.8rem}
+    .scale strong{font-size:.88rem}.scale small{opacity:.78}
+    .scale div:nth-child(1){background:#254b3b}.scale div:nth-child(2){background:#32614c}.scale div:nth-child(3){background:#467b63}.scale div:nth-child(4){background:#61947c}.scale div:nth-child(5){background:#7eaa94}.scale div:nth-child(6){background:#9dbfad;color:#19362a}
+    .checklist{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+    .checklist li{padding-left:28px;position:relative;color:#49574f}
+    .checklist li:before{content:"✓";position:absolute;left:0;width:19px;height:19px;border-radius:6px;background:var(--mint);color:var(--green);display:grid;place-items:center;font-size:.76rem;font-weight:900}
+    details{border-top:1px solid var(--line);padding-top:18px;margin-top:18px}
+    summary{cursor:pointer;font-weight:750;color:var(--green)}
+    .formula{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px;margin-top:14px;color:var(--muted);font-size:.9rem}
+    footer{text-align:center;color:var(--muted);font-size:.82rem;padding:25px 0 0}
+    .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:760px){.shell{width:min(100% - 20px,1160px);padding-top:16px}.tag{display:none}.matcher,.converter-layout,.ply-grid,.guide{grid-template-columns:1fr}.hero{padding:22px 14px;border-radius:22px}.input-card{padding:16px}.match-result{grid-template-columns:auto 1fr}.delta{grid-column:1/-1;text-align:left;border-top:1px solid var(--line);padding-top:10px}.comparison-chart{grid-template-columns:88px 1fr;padding:11px}.pie{width:82px}.pie-center{width:50px}.usage-inputs{grid-template-columns:1fr}.usage-results{grid-template-columns:repeat(2,1fr)}.panel{padding:18px 14px}.panel-head{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:repeat(2,1fr)}.scale{grid-template-columns:repeat(3,1fr)}.formula{grid-template-columns:1fr}.direction{align-items:flex-start;flex-direction:column}.brand p{display:none}}
+    @media(max-width:420px){.fields.has-weight-unit{grid-template-columns:1fr 1fr}.fields.has-weight-unit .unit-field{grid-column:1/-1}}
+    @media(max-width:420px){.mixed-row button{padding:8px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><div class="mark">线</div><div><h1>线材对一对</h1><p>编织图解替线与支数换算</p></div></div>
+      <div class="tag">长度越长越细 · Tex 越大越粗</div>
+    </header>
+
+    <section class="hero" aria-labelledby="match-title">
+      <div class="eyebrow">Quick match</div>
+      <h2 id="match-title">手头这团线，能替代图解里的线吗？</h2>
+      <p>照着线标输入长度与重量，工具会自动统一单位并给出初步判断。</p>
+      <div class="matcher">
+        <div class="input-card spec-card" data-prefix="pattern">
+          <div class="card-top"><h3>图解要求的线</h3><span class="step">1</span></div>
+          <label for="patternType">线标怎么写？</label>
+          <select id="patternType" class="spec-type"></select>
+          <div class="fields spec-fields"></div>
+          <div class="notation-mode"></div>
+          <p class="input-hint"></p>
+        </div>
+        <div class="input-card spec-card" data-prefix="mine">
+          <div class="card-top"><h3>我手头的线</h3><span class="step">2</span></div>
+          <label for="mineType">线标怎么写？</label>
+          <select id="mineType" class="spec-type"></select>
+          <div class="fields spec-fields"></div>
+          <div class="notation-mode"></div>
+          <p class="input-hint"></p>
+        </div>
+      </div>
+      <div class="calculate-bar"><button id="calculateMatch" class="calculate-btn" type="button">开始计算</button></div>
+      <div id="matchResult" class="match-result" aria-live="polite">
+        <div class="result-icon">?</div><div><h3>输入两组线材规格</h3><p>无需自己换算，填写后这里会自动出现匹配建议。</p><div class="strand-advice">合股建议也会在这里立即显示。</div></div><div class="delta"><strong>—</strong>粗细差异</div>
+      </div>
+    </section>
+
+    <main>
+      <section class="panel" aria-labelledby="convert-title">
+        <div class="panel-head"><div><h2 id="convert-title">完整换算</h2><p>输入任意一种常见标法，其他单位即时生成。</p></div><div class="examples" aria-label="示例"><button class="chip" data-example="210,25">210 m / 25 g</button><button class="chip" data-example="128,50">128 m / 50 g</button><button class="chip" data-example="175,50">175 m / 50 g</button></div></div>
+        <div class="converter-layout">
+          <div class="spec-card form-stack" data-prefix="convert">
+            <div><label for="convertType">选择输入单位</label><select id="convertType" class="spec-type"></select></div>
+            <div class="fields spec-fields"></div><div class="notation-mode"></div><p class="input-hint"></p>
+            <div class="soft"><p>小提示：如果线标写着“210 m / 25 g”，长度填 210、重量填 25 即可。</p></div>
+            <div class="soft weight-quick"><h3>重量快算</h3><p>只想知道“2 两是多少克”？直接在这里换算。</p><div class="quick-fields"><div><label class="sr" for="quickWeight">重量数值</label><input id="quickWeight" type="number" min="0" step="any" value="2" inputmode="decimal" placeholder="重量数值"></div><div><label class="sr" for="quickUnit">重量单位</label><select id="quickUnit" aria-label="快算重量单位"><option value="liang">市两</option><option value="g">克 g</option><option value="jin">市斤</option><option value="kg">公斤 kg</option><option value="oz">盎司 oz</option><option value="lb">磅 lb</option></select></div></div><div id="quickAnswer" class="quick-answer" aria-live="polite">2 两 = 100 克</div><div id="quickDetails" class="quick-details">也等于 0.2 斤 · 0.1 公斤</div></div>
+          </div>
+          <div id="metrics" class="metrics" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="ply-title">
+        <div class="panel-head"><div><h2 id="ply-title">合股模拟</h2><p>多股并在一起会变粗；线密度相加，Nm 会降低。</p></div></div>
+        <div class="ply-grid">
+          <div class="form-stack">
+            <div class="segmented" role="group" aria-label="合股计算方式"><button id="singleToTotal" class="active" type="button">同规格合股</button><button id="totalToSingle" type="button">反推单股</button><button id="mixedToTotal" type="button">不同规格合股</button></div>
+            <div class="same-fields form-stack" id="sameFields"><div><label for="plyCount">股数（2–12 股）</label><input id="plyCount" type="number" min="2" max="12" step="1" value="2" inputmode="numeric"></div><div><label for="plyNm" id="plyNmLabel">单股 Nm</label><input id="plyNm" type="number" min="0.001" step="any" value="8" inputmode="decimal"></div></div>
+            <div class="mixed-fields" id="mixedFields" hidden><p class="mixed-note">每行填一股线的原始标法，如 7.5 Nm、210m/25g、140yd/50g、Tex 250。本示例按你提供的线标，将“万五支”作为 10 Nm。</p><div id="mixedRows"></div><button class="chip" id="addMixedRow" type="button">再加一股</button></div>
+          </div>
+          <div class="ply-result" aria-live="polite"><span id="plyResultLabel">2 股合并后的等效规格</span><div class="big" id="plyResultBig">4 Nm</div><p id="plyResultText">Tex 250 · 约 400 m / 100 g</p><p id="plyFormula" class="mixed-note"></p></div>
+        </div>
+        <div class="warning"><strong>关于 1/3.5、2/8：</strong>国家、行业和厂家可能采用不同顺序或体系，不能一概而论。本页可选“前项为股数、后项为单纱 Nm”：此时 1/3.5 = 1 股 3.5 Nm，2/8 = 2 股 8 Nm，合股等效 4 Nm。使用前请核对线标说明。</div>
+        <details><summary>可输入哪些常见线标？</summary><div class="formula"><div>长度 / 重量：210m/25g、140yd/50g、175米/1两</div><div>重量在前：50g/128m、50g 128m</div><div>并列双单位：140yd/128m/50g，优先采用米数</div><div>公制：Nm 7.5、Tex 250、2500dtex、2250D</div><div>每公斤米数：15000m/kg = 15 Nm</div><div>英制支数：Ne 20、NeW 20、NeL 20 需写明体系</div><div>纯数字按 Nm；2/8 等斜杠写法需先选解释模式</div><div>DK、Worsted 等等级没有唯一支数，不能直接算合股</div></div><p class="mixed-note">这些类型根据纺织标准、编织行业说明和公开商品线标归纳，未做全网频率统计。“万五支 = 10 Nm”仅按你提供的线标处理。线径、绒毛、纤维和并线收缩仍需用密度片确认。</p><p class="mixed-note">参考：<a href="https://www.iso.org/standard/70774.html" target="_blank" rel="noopener noreferrer">ISO Tex 标准</a> · <a href="https://support.kniterate.com/hc/en-us/articles/360005872257-Yarn-count-and-converting-yarn-counts" target="_blank" rel="noopener noreferrer">Kniterate 支数说明</a> · <a href="https://www.craftyarncouncil.com/node/82" target="_blank" rel="noopener noreferrer">Craft Yarn Council 线标说明</a></p></details>
+      </section>
+
+      <section class="panel" aria-labelledby="guide-title">
+        <div class="guide">
+          <div><h2 id="guide-title">图解替线参考</h2><p style="color:var(--muted);margin:5px 0 0">按等效 m / 100 g 给出宽泛粗细级别，仅用于初筛。</p><div class="scale" aria-label="线材粗细等级"><div><strong>非常粗</strong><small>&lt;100 m</small></div><div><strong>粗</strong><small>100–159 m</small></div><div><strong>中粗</strong><small>160–239 m</small></div><div><strong>中等</strong><small>240–399 m</small></div><div><strong>细</strong><small>400–699 m</small></div><div><strong>很细</strong><small>≥700 m</small></div></div></div>
+          <div><h2>最后请做 10 cm 密度片</h2><ul class="checklist"><li>先看线标换算结果是否接近</li><li>再核对图解建议针号</li><li>比较纤维、捻度与绒毛感</li><li>洗涤并晾干密度片后再测量</li></ul></div>
+        </div>
+        <details><summary>查看计算公式与判断规则</summary><div class="formula"><div>m/100g = 长度(m) ÷ 重量(g) × 100</div><div>Nm = m/g = m/100g ÷ 100</div><div>Tex = 1000 ÷ Nm</div><div>dtex = Tex × 10</div><div>Denier = Tex × 9</div><div>yards → m：× 0.9144；oz → g：× 28.3495</div><div>n 股相同单纱：Tex × n；Nm ÷ n</div><div>匹配差 ≤10%；接近 10–20%；超过 20% 建议谨慎</div></div></details>
+      </section>
+    </main>
+    <footer>换算结果用于替线初筛，不代替实物试织。不同品牌的同等线密度也可能有不同手感与成品尺寸。</footer>
+  </div>
+
+  <script>
+    const UNITS={
+      mg:{label:'长度 m / 重量（自选单位）',fields:[['length','长度（m）'],['weight','重量数值']],hint:'例如 210 m / 25 g、175 m / 1 两；市制 1 两 = 50 g'},
+      m50:{label:'m / 50 g',fields:[['value','每 50 g 长度（m）']],hint:'例如 128 m / 50 g'},
+      yd50:{label:'yards / 50 g',fields:[['value','每 50 g 长度（yards）']],hint:'1 yard = 0.9144 m'},
+      ydoz:{label:'yards / oz',fields:[['value','每 oz 长度（yards）']],hint:'1 oz = 28.3495 g'},
+      nm:{label:'Nm 公制支数',fields:[['value','Nm 数值']],hint:'Nm 越大，线越细'},
+      tex:{label:'Tex',fields:[['value','Tex 数值']],hint:'Tex 越大，线越粗'},
+      dtex:{label:'dtex',fields:[['value','dtex 数值']],hint:'10 dtex = 1 Tex'},
+      den:{label:'Denier（旦尼尔）',fields:[['value','Denier 数值']],hint:'9 Denier = 1 Tex'},
+      count:{label:'支数写法（如 1/3.5、2/8）',fields:[['notation','支数写法']],hint:'这种写法有行业差异，请确认解释模式'}
+    };
+    const WEIGHT_UNITS={g:1,liang:50,jin:500,kg:1000,oz:28.349523125,lb:453.59237};
+    const defaults={pattern:{type:'m50',values:[128]},mine:{type:'mg',values:[175,50]},convert:{type:'mg',values:[210,25]}};
+    function options(){return Object.entries(UNITS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
+    function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+    function renderCard(card, preset){
+      const type=card.querySelector('.spec-type'); type.innerHTML=options(); type.value=preset.type;
+      type.addEventListener('change',()=>{renderFields(card,type.value,[]);handleSpecChange(card)});
+      renderFields(card,preset.type,preset.values);
+    }
+    function renderFields(card,type,values){
+      const cfg=UNITS[type], box=card.querySelector('.spec-fields');
+      box.classList.toggle('has-weight-unit',type==='mg');
+      box.style.gridTemplateColumns=type==='mg'?'':cfg.fields.length===1?'1fr':'1.2fr .8fr';
+      box.innerHTML=cfg.fields.map((f,i)=>`<div><label class="sr" for="${card.dataset.prefix}_${f[0]}">${esc(f[1])}</label><input id="${card.dataset.prefix}_${f[0]}" data-key="${f[0]}" ${f[0]==='notation'?'type="text" inputmode="decimal"':'type="number" min="0" step="any" inputmode="decimal"'} placeholder="${esc(f[1])}" value="${values[i]??''}"></div>`).join('');
+      if(type==='mg'){
+        box.insertAdjacentHTML('beforeend',`<div class="unit-field"><label class="sr" for="${card.dataset.prefix}_weightUnit">重量单位</label><select id="${card.dataset.prefix}_weightUnit" data-key="weightUnit" aria-label="重量单位"><option value="g">克 g</option><option value="liang">市两</option><option value="jin">市斤</option><option value="kg">公斤 kg</option><option value="oz">盎司 oz</option><option value="lb">磅 lb</option></select></div>`);
+      }
+      const mode=card.querySelector('.notation-mode');
+      if(type==='count'){
+        mode.style.display='block';
+        mode.innerHTML=`<label for="${card.dataset.prefix}_mode">解释模式</label><select id="${card.dataset.prefix}_mode"><option value="pliesFirst">前项=股数，后项=单纱 Nm</option><option value="countFirst">前项=单纱 Nm，后项=股数</option></select>`;
+      }else{mode.style.display='none';mode.innerHTML=''}
+      card.querySelector('.input-hint').textContent=cfg.hint;
+      card.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>handleSpecChange(card)));
+    }
+    function cardNm(card){
+      const type=card.querySelector('.spec-type').value;
+      const val=k=>Number(card.querySelector(`[data-key="${k}"]`)?.value);
+      let nm=NaN;
+      if(type==='mg')nm=val('length')/(val('weight')*WEIGHT_UNITS[card.querySelector('[data-key="weightUnit"]').value]);
+      if(type==='m50')nm=val('value')/50;
+      if(type==='yd50')nm=val('value')*.9144/50;
+      if(type==='ydoz')nm=val('value')*.9144/28.3495;
+      if(type==='nm')nm=val('value');
+      if(type==='tex')nm=1000/val('value');
+      if(type==='dtex')nm=10000/val('value');
+      if(type==='den')nm=9000/val('value');
+      if(type==='count'){
+        const raw=String(card.querySelector('[data-key="notation"]')?.value||'').trim();
+        const match=raw.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+        if(!match)return NaN;
+        const a=Number(match[1]),b=Number(match[2]),mode=card.querySelector('.notation-mode select').value;
+        nm=mode==='pliesFirst'?b/a:a/b;
+      }
+      return Number.isFinite(nm)&&nm>0?nm:NaN;
+    }
+    function dataFromNm(nm){return {nm,tex:1000/nm,dtex:10000/nm,den:9000/nm,m100:nm*100,m50:nm*50}}
+    function fmt(n,d=1){return Number.isFinite(n)?new Intl.NumberFormat('zh-CN',{maximumFractionDigits:d}).format(n):'—'}
+    function updateWeightQuick(){
+      const input=document.getElementById('quickWeight'),unit=document.getElementById('quickUnit').value;
+      const amount=Number(input.value),answer=document.getElementById('quickAnswer'),details=document.getElementById('quickDetails');
+      if(input.value.trim()===''||!Number.isFinite(amount)||amount<0){answer.textContent='请输入有效的重量';details.textContent='';return}
+      const grams=amount*WEIGHT_UNITS[unit],labels={g:'克',liang:'两',jin:'斤',kg:'公斤',oz:'盎司',lb:'磅'};
+      answer.textContent=`${fmt(amount,3)} ${labels[unit]} = ${fmt(grams,3)} 克`;
+      details.textContent=`也等于 ${fmt(grams/500,3)} 斤 · ${fmt(grams/1000,3)} 公斤`;
+    }
+    function grade(m){if(m<100)return'非常粗';if(m<160)return'粗';if(m<240)return'中粗';if(m<400)return'中等';if(m<700)return'细';return'很细'}
+    function renderMetrics(){
+      const d=dataFromNm(cardNm(document.querySelector('[data-prefix="convert"]'))), box=document.getElementById('metrics');
+      if(!Number.isFinite(d.nm)){box.innerHTML='<div class="soft" style="grid-column:1/-1"><p>请输入大于 0 的有效数值。</p></div>';return}
+      const items=[['每 100 g 长度',`${fmt(d.m100)} m`],['每 50 g 长度',`${fmt(d.m50)} m`],['Nm 公制支数',fmt(d.nm,3)],['Tex',fmt(d.tex,2)],['dtex',fmt(d.dtex,1)],['Denier',fmt(d.den,1)]];
+      box.innerHTML=items.map(i=>`<div class="metric"><span>${i[0]}</span><strong>${i[1]}</strong></div>`).join('')+`<div class="direction"><div><strong>粗细方向</strong><br><small>m/100g 与 Nm 越大越细；Tex、dtex、Denier 越大越粗</small></div><span class="grade">${grade(d.m100)}</span></div>`;
+    }
+    function renderMatch(){
+      const a=cardNm(document.querySelector('[data-prefix="pattern"]')),b=cardNm(document.querySelector('[data-prefix="mine"]')),el=document.getElementById('matchResult');
+      el.className='match-result';
+      if(!Number.isFinite(a)||!Number.isFinite(b)){el.innerHTML='<div class="result-icon">?</div><div><h3>请补全两组规格</h3><p>需要有效的长度、重量或支数。</p><div class="strand-advice">补全后会自动给出建议股数。</div></div><div class="delta"><strong>—</strong>粗细差异</div>';return}
+      const diff=Math.abs(b-a)/a*100, relation=b>a?'更细':b<a?'更粗':'相同', mMine=b*100,mPattern=a*100;
+      const patternTex=1000/a,mineTex=1000/b,patternShare=patternTex/(patternTex+mineTex)*100;
+      let title,desc,cls,icon;
+      if(diff<=10){title='匹配度较高';desc='可作为优先试织选项，但仍建议先做密度片。';cls='good';icon='✓'}
+      else if(diff<=20){title='接近，可以试织';desc='粗细有一定差异，可能需要调整针号或织法松紧。';cls='close';icon='≈'}
+      else{title='差异较大，不建议直接替代';desc='若仍想使用，建议重新打样并按密度调整图解尺寸。';cls='bad';icon='!'}
+      let best={n:1,diff:Infinity,equivalent:b};
+      for(let n=1;n<=12;n++){
+        const equivalent=b/n, candidateDiff=Math.abs(equivalent-a)/a*100;
+        if(candidateDiff<best.diff){best={n,diff:candidateDiff,equivalent}}
+      }
+      let advice;
+      if(b<a){
+        advice='合股建议：手头线已经偏粗，增加股数只会更粗。保持单股最接近，建议另选更细的线。';
+      }else if(best.n===1){
+        advice=`合股建议：无需合股，单股已是 1–12 股中最接近的方案（仍相差 ${fmt(best.diff)}%）。`;
+      }else{
+        const afterRelation=best.equivalent>a?'偏细':best.equivalent<a?'偏粗':'刚好';
+        if(best.diff<=10) advice=`合股建议：使用 ${best.n} 股，合股后约 ${fmt(best.equivalent*100)} m/100g，${afterRelation} ${fmt(best.diff)}%，匹配度较高。`;
+        else if(best.diff<=20) advice=`合股建议：可先试 ${best.n} 股，合股后约 ${fmt(best.equivalent*100)} m/100g，${afterRelation} ${fmt(best.diff)}%，建议做密度片确认。`;
+        else advice=`合股建议：${best.n} 股是 1–12 股中最接近的，但合股后仍${afterRelation} ${fmt(best.diff)}%，不建议直接开织。`;
+      }
+      const chart=`<div class="comparison-chart" role="img" aria-label="粗细对比：图解 ${fmt(a,3)} Nm，手头 ${fmt(b,3)} Nm，差异 ${fmt(diff)}%"><div class="pie" style="background:conic-gradient(var(--gold) 0 ${patternShare}%,#79b995 ${patternShare}% 100%)"><div class="pie-center"><span>粗细差<strong>${fmt(diff)}%</strong></span></div></div><div class="chart-legend"><div class="legend-row"><i style="background:var(--gold)"></i><div><strong>图解线 · ${fmt(a,3)} Nm</strong>Tex ${fmt(patternTex,1)} · ${fmt(mPattern)} m/100g</div></div><div class="legend-row"><i style="background:#79b995"></i><div><strong>手头线 · ${fmt(b,3)} Nm</strong>Tex ${fmt(mineTex,1)} · ${fmt(mMine)} m/100g</div></div></div></div>`;
+      const warning=diff>20?`<div class="gap-warning">⚠ 差距过大：当前单股相差 ${fmt(diff)}%，请勿直接按原图解开织。</div>`:'';
+      const unitOptions=`<option value="g">克 g</option><option value="liang">市两</option><option value="jin">市斤</option><option value="kg">公斤 kg</option><option value="oz">盎司 oz</option><option value="lb">磅 lb</option>`;
+      const usage=`<div class="usage-converter"><h4>线材用量换算</h4><p>输入任意常用重量单位；“绞”没有固定重量，请以线标为准。</p><div class="usage-inputs"><div><label for="usageAmount">预计总用量</label><div class="usage-quantity"><input id="usageAmount" type="number" min="0" step="any" value="500" inputmode="decimal"><select id="usageUnit" aria-label="总用量单位">${unitOptions}</select></div></div><div><label for="hankAmount">每绞重量</label><div class="usage-quantity"><input id="hankAmount" type="number" min="0.1" step="any" value="50" inputmode="decimal"><select id="hankUnit" aria-label="每绞重量单位">${unitOptions}</select></div></div></div><div class="usage-results"><div><span>克</span><strong id="usageGramsResult">500 g</strong></div><div><span>公斤</span><strong id="usageKg">0.5 kg</strong></div><div><span>市斤</span><strong id="usageJin">1 斤</strong></div><div><span>市两</span><strong id="usageLiang">10 两</strong></div><div><span>精确绞数</span><strong id="usageHanks">10 绞</strong></div></div><div id="purchaseTip" class="purchase-tip">购买时至少准备 10 绞（建议另留损耗余量）</div></div>`;
+      el.classList.add(cls);el.innerHTML=`<div class="result-icon">${icon}</div><div><h3>${title}</h3><p>手头线材约 ${fmt(diff)}% ${relation}</p>${chart}<div class="strand-advice">${advice}</div>${warning}${usage}</div><div class="delta"><strong>${fmt(diff)}%</strong>粗细差异</div>`;
+      bindUsageConverter();
+    }
+    function updateUsage(){
+      const amountInput=document.getElementById('usageAmount'),hankInput=document.getElementById('hankAmount');
+      const grams=Number(amountInput?.value)*WEIGHT_UNITS[document.getElementById('usageUnit')?.value];
+      const hankGrams=Number(hankInput?.value)*WEIGHT_UNITS[document.getElementById('hankUnit')?.value];
+      const valid=amountInput?.value.trim()!==''&&hankInput?.value.trim()!==''&&Number.isFinite(grams)&&grams>=0&&Number.isFinite(hankGrams)&&hankGrams>0;
+      const set=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value};
+      if(!valid){['usageGramsResult','usageKg','usageJin','usageLiang','usageHanks'].forEach(id=>set(id,'—'));set('purchaseTip','请输入有效的总用量和每绞重量。');return}
+      const hanks=grams/hankGrams,rounded=Math.ceil(hanks);
+      set('usageGramsResult',`${fmt(grams,3)} g`);set('usageKg',`${fmt(grams/1000,3)} kg`);set('usageJin',`${fmt(grams/500,3)} 斤`);set('usageLiang',`${fmt(grams/50,2)} 两`);set('usageHanks',`${fmt(hanks,2)} 绞`);set('purchaseTip',`购买时至少准备 ${rounded} 绞（建议另留损耗余量）`);
+    }
+    function bindUsageConverter(){
+      ['usageAmount','hankAmount'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateUsage));
+      ['usageUnit','hankUnit'].forEach(id=>document.getElementById(id)?.addEventListener('change',updateUsage));
+      updateUsage();
+    }
+    function resetMatch(message='填好两组线材规格后，点击“开始计算”。'){
+      const el=document.getElementById('matchResult');el.className='match-result';
+      el.innerHTML=`<div class="result-icon">?</div><div><h3>等待计算</h3><p>${message}</p><div class="strand-advice">计算后会依次显示粗细饼图、等效支数和合股建议。</div></div><div class="delta"><strong>—</strong>粗细差异</div>`;
+    }
+    function handleSpecChange(card){
+      if(card.dataset.prefix==='convert')renderMetrics();
+      else resetMatch('数值已更新，请点击“开始计算”查看新结果。');
+    }
+    const YARD_METERS=.9144,POUND_GRAMS=453.59237;
+    function parseYarnMark(raw,slashMode=''){
+      const mark=String(raw).trim().toLowerCase().replace(/／/g,'/').replace(/[，,\s]/g,'');
+      const valid=(nm,note)=>({nm,note,ambiguous:false});
+      const invalid=(note,ambiguous=false)=>({nm:NaN,note,ambiguous});
+      if(!mark)return invalid('请填入线标，例如 7.5 Nm 或 210m/25g');
+      if(mark==='万五支')return valid(10,'按你提供的线标：万五支 = 10 Nm；其他商品请核对');
+      if(/^\d+(?:\.\d+)?支$/.test(mark))return invalid('“支”可能是公支或英支，请写 Nm 10 或 Ne 10');
+      const unitPatterns=[
+        {re:/^(?:dtex)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)dtex$/,calc:x=>10000/x,name:'dtex'},
+        {re:/^(?:tex)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)tex$/,calc:x=>1000/x,name:'Tex'},
+        {re:/^(?:denier|den|旦尼尔|d)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)(?:denier|den|旦尼尔|d)$/,calc:x=>9000/x,name:'Denier'},
+        {re:/^(?:nm|公支)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)(?:nm|公支)$/,calc:x=>x,name:'Nm'},
+        {re:/^(?:ne|棉支)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)(?:ne|棉支)$/,calc:x=>x*840*YARD_METERS/POUND_GRAMS,name:'棉纱 Ne'},
+        {re:/^(?:new|精纺毛支)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)(?:new|精纺毛支)$/,calc:x=>x*560*YARD_METERS/POUND_GRAMS,name:'精纺毛支'},
+        {re:/^(?:nel|亚麻支)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)(?:nel|亚麻支)$/,calc:x=>x*300*YARD_METERS/POUND_GRAMS,name:'亚麻支'}
+      ];
+      for(const item of unitPatterns){const match=mark.match(item.re);if(match){const value=Number(match[1]||match[2]);return value>0?valid(item.calc(value),`${item.name} ${fmt(value,3)} → ${fmt(item.calc(value),3)} Nm`):invalid('数值必须大于 0')}}
+      const weightFactors={g:1,克:1,kg:1000,公斤:1000,千克:1000,市斤:500,斤:500,市两:50,两:50,oz:28.349523125,盎司:28.349523125,lb:POUND_GRAMS,磅:POUND_GRAMS};
+      const lengthWeight=[...mark.matchAll(/(\d+(?:\.\d+)?)(yards?|yds?|yd|码|m|米)\/(\d+(?:\.\d+)?)?(kg|公斤|千克|g|克|市斤|斤|市两|两|oz|盎司|lb|磅)/g)];
+      if(lengthWeight.length){
+        const match=lengthWeight.find(x=>x[2]==='m'||x[2]==='米')||lengthWeight[0];
+        const length=Number(match[1]),weight=match[3]?Number(match[3]):1;
+        const meters=length*(match[2]==='m'||match[2]==='米'?1:YARD_METERS);
+        const nm=meters/(weight*weightFactors[match[4]]);
+        return nm>0?valid(nm,`${match[0]} → ${fmt(nm,3)} Nm`):invalid('长度与重量都必须大于 0');
+      }
+      const reverse=mark.match(/(\d+(?:\.\d+)?)(kg|公斤|千克|g|克|市斤|斤|市两|两|oz|盎司|lb|磅)\/?(\d+(?:\.\d+)?)(yards?|yds?|yd|码|m|米)/);
+      if(reverse){
+        const meters=Number(reverse[3])*(reverse[4]==='m'||reverse[4]==='米'?1:YARD_METERS);
+        const nm=meters/(Number(reverse[1])*weightFactors[reverse[2]]);
+        return nm>0?valid(nm,`${reverse[0]} → ${fmt(nm,3)} Nm`):invalid('长度与重量都必须大于 0');
+      }
+      const slash=mark.match(/^(?:nm)?(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)(?:nm)?$/);
+      if(slash){
+        if(!slashMode)return invalid('斜杠支数有不同顺序，请先选择解释模式',true);
+        const a=Number(slash[1]),b=Number(slash[2]),plies=slashMode==='pliesFirst'?a:b,single=slashMode==='pliesFirst'?b:a;
+        if(!Number.isInteger(plies)||plies<1||single<=0)return invalid('股数须为正整数，单纱 Nm 须大于 0',true);
+        return valid(single/plies,`${plies} 股 × 单纱 ${fmt(single,3)} Nm → 等效 ${fmt(single/plies,3)} Nm`);
+      }
+      if(/^\d+(?:\.\d+)?$/.test(mark))return valid(Number(mark),`纯数字按 Nm 理解：${mark} Nm`);
+      return invalid('未识别；请用“210m/25g”“7.5 Nm”“Tex 250”等标法');
+    }
+    let plyMode='single',mixedRowSerial=0;
+    function addMixedRow(value=''){
+      const box=document.getElementById('mixedRows');
+      if(box.children.length>=12)return;
+      const id=`mixed_${++mixedRowSerial}`;
+      box.insertAdjacentHTML('beforeend',`<div class="mixed-row"><label for="${id}">第 ${box.children.length+1} 股线标</label><input id="${id}" class="mixed-value" type="text" inputmode="text" placeholder="例如 210m/25g 或 2/8" value="${esc(value)}"><button type="button" class="remove-mixed" aria-label="删除第 ${box.children.length+1} 股">删</button><select class="mixed-slash-mode" aria-label="第 ${box.children.length+1} 股斜杠支数解释" hidden><option value="">请选择 2/8 一类写法的解释</option><option value="pliesFirst">前项是股数，后项是单纱 Nm</option><option value="countFirst">前项是单纱 Nm，后项是股数</option></select><div class="mixed-parsed" aria-live="polite"></div></div>`);
+      updateMixedControls();renderPly();
+    }
+    function updateMixedControls(){
+      const rows=[...document.querySelectorAll('#mixedRows .mixed-row')];
+      rows.forEach((row,i)=>{row.querySelector('label').textContent=`第 ${i+1} 股线标`;row.querySelector('.mixed-slash-mode').setAttribute('aria-label',`第 ${i+1} 股斜杠支数解释`);row.querySelector('.remove-mixed').setAttribute('aria-label',`删除第 ${i+1} 股`);row.querySelector('.remove-mixed').disabled=rows.length<=2});
+      document.getElementById('addMixedRow').disabled=rows.length>=12;
+    }
+    function setPlyMode(mode){
+      plyMode=mode;
+      document.querySelectorAll('.segmented button').forEach(button=>button.classList.toggle('active',button.id===({single:'singleToTotal',total:'totalToSingle',mixed:'mixedToTotal'}[mode])));
+      document.getElementById('sameFields').hidden=mode==='mixed';
+      document.getElementById('mixedFields').hidden=mode!=='mixed';
+      renderPly();
+    }
+    function renderPly(){
+      const n=Math.min(12,Math.max(2,Math.round(Number(document.getElementById('plyCount').value)||2))),input=Number(document.getElementById('plyNm').value),label=document.getElementById('plyNmLabel');
+      let result=NaN,formula='';
+      if(plyMode==='single'){label.textContent='单股 Nm';result=input>0?input/n:NaN;document.getElementById('plyResultLabel').textContent=`${n} 股合并后的等效规格`}
+      else if(plyMode==='total'){label.textContent='合股后的总等效 Nm';result=input>0?input*n:NaN;document.getElementById('plyResultLabel').textContent=`拆分为 ${n} 股时，每一单股规格`}
+      else{
+        const rows=[...document.querySelectorAll('#mixedRows .mixed-row')];
+        const parsed=rows.map(row=>{
+          const input=row.querySelector('.mixed-value'),mode=row.querySelector('.mixed-slash-mode');
+          const isSlash=/^(?:nm)?\s*\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?\s*(?:nm)?$/i.test(input.value.trim());
+          mode.hidden=!isSlash;
+          const item=parseYarnMark(input.value,mode.value),status=row.querySelector('.mixed-parsed');
+          status.textContent=item.note;status.classList.toggle('invalid',!Number.isFinite(item.nm));
+          return item;
+        });
+        if(rows.length>=2&&parsed.every(item=>Number.isFinite(item.nm)&&item.nm>0)){
+          const texSum=parsed.reduce((sum,item)=>sum+1000/item.nm,0);
+          result=1000/texSum;
+          formula=`各股 Tex 相加：${parsed.map(item=>fmt(1000/item.nm,2)).join(' + ')} = ${fmt(texSum,2)} Tex。理论值，未计并线收缩。`;
+        }else{
+          formula=parsed.find(item=>!Number.isFinite(item.nm))?.note||'请至少输入两股有效线标';
+        }
+        document.getElementById('plyResultLabel').textContent=`${rows.length} 股不同规格线合并后的等效规格`;
+      }
+      const d=dataFromNm(result);
+      document.getElementById('plyResultBig').textContent=Number.isFinite(result)&&result>0?`${fmt(result,3)} Nm`:'—';
+      document.getElementById('plyResultText').textContent=Number.isFinite(result)&&result>0?`Tex ${fmt(d.tex,2)} · 约 ${fmt(d.m100)} m / 100 g`:'请输入大于 0 的有效支数或米数';
+      document.getElementById('plyFormula').textContent=formula;
+    }
+    function calculateAll(){renderMatch();renderMetrics()}
+    document.querySelectorAll('.spec-card').forEach(card=>renderCard(card,defaults[card.dataset.prefix]));
+    document.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{const [m,g]=btn.dataset.example.split(',');const card=document.querySelector('[data-prefix="convert"]');card.querySelector('.spec-type').value='mg';renderFields(card,'mg',[m,g]);renderMetrics()}));
+    document.getElementById('calculateMatch').addEventListener('click',renderMatch);
+    document.getElementById('quickWeight').addEventListener('input',updateWeightQuick);
+    document.getElementById('quickUnit').addEventListener('change',updateWeightQuick);
+    document.getElementById('singleToTotal').onclick=()=>setPlyMode('single');
+    document.getElementById('totalToSingle').onclick=()=>setPlyMode('total');
+    document.getElementById('mixedToTotal').onclick=()=>setPlyMode('mixed');
+    document.getElementById('addMixedRow').onclick=()=>addMixedRow();
+    document.getElementById('mixedRows').addEventListener('input',event=>{if(event.target.classList.contains('mixed-value'))event.target.closest('.mixed-row').querySelector('.mixed-slash-mode').value='';renderPly()});
+    document.getElementById('mixedRows').addEventListener('change',renderPly);
+    document.getElementById('mixedRows').addEventListener('click',event=>{if(!event.target.classList.contains('remove-mixed'))return;event.target.closest('.mixed-row').remove();updateMixedControls();renderPly()});
+    document.getElementById('plyCount').addEventListener('input',renderPly);document.getElementById('plyNm').addEventListener('input',renderPly);
+    addMixedRow('7.5 Nm');addMixedRow('万五支');renderMetrics();resetMatch();renderPly();updateWeightQuick();
+  </script>
+</body>
+</html>
